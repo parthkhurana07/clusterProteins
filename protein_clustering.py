@@ -16,6 +16,7 @@ from Bio import PDB
 from rcsbsearchapi import TextQuery
 from Bio.PDB import PDBParser, PDBList
 from scipy.spatial.distance import pdist, squareform
+from scipy.cluster.hierarchy import dendrogram, linkage
 from sklearn.cluster import AgglomerativeClustering, KMeans, DBSCAN
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -217,6 +218,14 @@ class ProteinStructureClustering:
         # Normalize features
         normalized_features = (self.feature_matrix - np.mean(self.feature_matrix, axis=0)) / np.std(self.feature_matrix, axis=0)
         
+        # Create linkage matrix for dendrogram
+        if len(normalized_features) >= 2:
+            # Create linkage matrix for hierarchical clustering visualization
+            self.linkage_matrix = linkage(normalized_features, method='ward')
+            
+            # Generate dendrogram regardless of the chosen clustering method
+            self.create_dendrogram(normalized_features)
+        
         # Apply the selected clustering method
         if method == "hierarchical":
             # Try different parameter combinations based on scikit-learn version
@@ -287,6 +296,41 @@ class ProteinStructureClustering:
         self.visualize_clusters(normalized_features, labels, method, timestamp)
         
         return cluster_results
+    
+    def create_dendrogram(self, features):
+        """
+        Create and save a dendrogram visualization of the hierarchical clustering
+        
+        Args:
+            features (np.array): Normalized feature matrix
+        """
+        print("Creating dendrogram visualization...")
+        
+        # Create linkage matrix
+        Z = linkage(features, 'ward')
+        
+        # Create the dendrogram
+        plt.figure(figsize=(12, 8))
+        plt.title('Hierarchical Clustering Dendrogram of Protein Structures')
+        plt.xlabel('Protein PDB IDs')
+        plt.ylabel('Distance')
+        
+        # Draw the dendrogram
+        dendrogram(
+            Z,
+            leaf_rotation=90.,  # rotates the x axis labels
+            leaf_font_size=10.,  # font size for the x axis labels
+            labels=self.pdb_ids,  # use PDB IDs as labels
+            color_threshold=0.7*max(Z[:,2])  # color threshold for branches
+        )
+        
+        plt.tight_layout()
+        
+        # Save the dendrogram
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        dendrogram_filename = os.path.join(self.figures_dir, f"dendrogram_{timestamp}.png")
+        plt.savefig(dendrogram_filename, dpi=300, bbox_inches='tight')
+        print(f"Dendrogram visualization saved to {dendrogram_filename}")
         
     def visualize_clusters(self, features, labels, method, timestamp):
         """
