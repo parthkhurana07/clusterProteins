@@ -29,8 +29,8 @@ The Protein Structure Clustering Tool allows researchers to analyze relationship
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/protein-structure-clustering.git
-cd protein-structure-clustering
+git@github.com:parthkhurana07/clusterProteins.git
+cd clusterProteins
 
 # Create a virtual environment
 python -m venv venv
